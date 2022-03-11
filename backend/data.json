@@ -1,0 +1,20 @@
+[
+  {
+    "uuid": "1",
+    "name": "test1",
+    "username": "x",
+    "password": "SGVsbG8gV29ybGQh",
+    "uri": [
+      "example.com"
+    ]
+  },
+  {
+    "uuid": "2",
+    "name": "test2",
+    "username": "here-my-username",
+    "password": "here-my-password",
+    "uri": [
+      "test.example.com"
+    ]
+  }
+]
