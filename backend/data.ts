@@ -70,7 +70,7 @@ async function writeJson() {
         data.forEach((value, key) => {
             json.push({ uuid: key, ...value });
         });
-        await Deno.writeTextFile(dataFilePath, JSON.stringify(json));
+        await Deno.writeTextFile(dataFilePath, JSON.stringify(json, null, 2));
     } catch (e) {
         console.error(e);
         throw new Error(serializeCodeObject(105));
