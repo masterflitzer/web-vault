@@ -1,58 +1,78 @@
-import { v5 as uuid5 } from "https://deno.land/std@0.144.0/uuid/mod.ts";
+import type { VaultEntry, VaultEntryRest } from "../types.ts";
+import { isValidUUID, serializeCodeObject } from "./helper.ts";
 
-type VaultEntry = {
-    uuid: string;
-    name: string;
-    username: string;
-    password: string;
-    uri: string[];
-};
+let dataFilePath: string;
+export const setDataFilePath = (s: string) => (dataFilePath = s);
+export const getDataFilePath = () => dataFilePath;
 
-// UUID and rest of data
-const data = new Map<
-    string,
-    {
-        name: string;
-        username: string;
-        password: string;
-        uri: string[];
-    }
->();
+const data = new Map<string, VaultEntryRest>();
 
-const isValidUUID = (uuid: string) => uuid5.validate(uuid);
-
-const getData = (uuid: string): VaultEntry => {
-    if (!isValidUUID(uuid)) throw new Error("Invalid UUID!");
-    const x = data.get(uuid);
-    if (x == null)
-        throw new Error("Couldn't find a VaultEntry with this UUID!");
-    return { uuid, ...x };
-};
-
-const setData = (item: VaultEntry): void => {
-    const { uuid, ...rest } = item;
-    if (!isValidUUID(uuid)) throw new Error("Invalid UUID!");
-    data.set(uuid, rest);
-};
-
-const delData = (uuid: string): void => {
-    if (!isValidUUID(uuid)) throw new Error("Invalid UUID!");
-    data.delete(uuid);
-};
-
-const readJson = async (filePath: string) => {
-    const json = JSON.parse(await Deno.readTextFile(filePath)) as VaultEntry[];
-    data.clear();
-    json.forEach((x) => setData(x));
-};
-
-const writeJson = async (filePath: string) => {
-    const json: VaultEntry[] = [];
-    data.forEach((_value, key) => {
-        const x: VaultEntry = getData(key);
-        json.push(x);
+export async function readItems(): Promise<VaultEntry[]> {
+    await readJson();
+    const result: VaultEntry[] = [];
+    data.forEach((value, key) => {
+        result.push({ uuid: key, ...value });
     });
-    await Deno.writeTextFile(filePath, JSON.stringify(json));
-};
+    return result;
+}
 
-export { readJson, writeJson, getData, setData, delData };
+export async function readItem(uuid: string): Promise<VaultEntry> {
+    if (!isValidUUID(uuid)) throw new Error(serializeCodeObject(101));
+    if (!data.has(uuid)) throw new Error(serializeCodeObject(102));
+    await readJson();
+    const rest = data.get(uuid) as VaultEntryRest;
+    return { uuid, ...rest };
+}
+
+export async function createItem(item: VaultEntry) {
+    const { uuid, ...rest } = item;
+    if (!isValidUUID(uuid)) throw new Error(serializeCodeObject(101));
+    if (data.has(uuid)) throw new Error(serializeCodeObject(103));
+    await readJson();
+    data.set(uuid, rest);
+    await writeJson();
+}
+
+export async function updateItem(item: VaultEntry) {
+    const { uuid, ...rest } = item;
+    if (!isValidUUID(uuid)) throw new Error(serializeCodeObject(101));
+    if (!data.has(uuid)) throw new Error(serializeCodeObject(102));
+    await readJson();
+    data.set(uuid, rest);
+    await writeJson();
+}
+
+export async function deleteItem(uuid: string) {
+    if (!isValidUUID(uuid)) throw new Error(serializeCodeObject(101));
+    await readJson();
+    data.delete(uuid);
+    await writeJson();
+}
+
+async function readJson() {
+    try {
+        const text = await Deno.readTextFile(dataFilePath);
+        const json = JSON.parse(text) as VaultEntry[];
+        data.clear();
+        json.forEach((item) => {
+            const { uuid, ...rest } = item;
+            data.set(uuid, rest);
+        });
+    } catch (e) {
+        console.error(e);
+        throw new Error(serializeCodeObject(104));
+    }
+}
+
+async function writeJson() {
+    try {
+        const json: VaultEntry[] = [];
+        data.forEach((value, key) => {
+            json.push({ uuid: key, ...value });
+        });
+        await Deno.writeTextFile(dataFilePath, JSON.stringify(json));
+    } catch (e) {
+        console.error(e);
+        throw new Error(serializeCodeObject(105));
+    }
+}
