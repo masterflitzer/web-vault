@@ -20,20 +20,28 @@ const dirname = getDirname(import.meta.url);
 
 const router = new Router();
 
+// deno-lint-ignore require-await
 router.get("/api", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
     const msg = "Received a HTTP GET request";
-    ctx.response.body = {
-        status: {
-            code: ctx.response.status,
-            message: msg,
+    ctx.response.body = {};
+    ctx.response.body = JSON.stringify(
+        {
+            status: {
+                code: ctx.response.status,
+                message: msg,
+            },
         },
-    };
+        null,
+        2
+    );
 });
 
+// deno-lint-ignore require-await
 router.post("/api", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
     const msg = "Received a HTTP POST request";
+    ctx.response.body = {};
     ctx.response.body = {
         status: {
             code: ctx.response.status,
@@ -42,9 +50,11 @@ router.post("/api", async (ctx) => {
     };
 });
 
+// deno-lint-ignore require-await
 router.put("/api/:id", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
     const msg = "Received a HTTP PUT request";
+    ctx.response.body = {};
     ctx.response.body = {
         status: {
             code: ctx.response.status,
