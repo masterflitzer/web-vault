@@ -4,44 +4,77 @@ import {
     Status,
     send,
 } from "https://deno.land/x/oak@v10.4.0/mod.ts";
-import { v5 as uuid5 } from "https://deno.land/std@0.144.0/uuid/mod.ts";
+import {
+    getDirname,
+    getJsonResponse,
+    deserializeCodeObject,
+    generateUUIDv5,
+    UUID_NAMESPACE,
+} from "./backend/helper.ts";
 import * as data from "./backend/data.ts";
-import { getDirname } from "./helper.ts";
 
 const port = 8080;
-const dirname = getDirname();
+data.setDataFilePath("./backend/data.json");
+
+const dirname = getDirname(import.meta.url);
 
 const router = new Router();
 
-router.get("/", async (ctx) => {
+router.get("/api", async (ctx) => {
+    ctx.response.headers.set("Content-Type", "application/json");
+    const msg = "Received a HTTP GET request";
+    ctx.response.body = {
+        status: {
+            code: ctx.response.status,
+            message: msg,
+        },
+    };
+});
+
+router.post("/api", async (ctx) => {
+    ctx.response.headers.set("Content-Type", "application/json");
+    const msg = "Received a HTTP POST request";
+    ctx.response.body = {
+        status: {
+            code: ctx.response.status,
+            message: msg,
+        },
+    };
+});
+
+router.put("/api/:id", async (ctx) => {
+    ctx.response.headers.set("Content-Type", "application/json");
+    const msg = "Received a HTTP PUT request";
+    ctx.response.body = {
+        status: {
+            code: ctx.response.status,
+            message: msg,
+        },
+    };
+});
+
+router.delete("/api/:id", async (ctx) => {
+    ctx.response.headers.set("Content-Type", "application/json");
+    const id = ctx.params.id;
     try {
-        await send(ctx, ctx.request.url.pathname, {
-            root: `${dirname}/frontend`,
-            index: "index.html",
-        });
+        await data.deleteItem(id);
+        ctx.response.body = getJsonResponse(true, {});
     } catch (e) {
         console.error(e);
+        const code = deserializeCodeObject(e.message);
+        switch (code) {
+            case 101:
+                ctx.response.status = Status.BadRequest;
+                break;
+            case 102:
+                ctx.response.status = Status.NotFound;
+                break;
+            default:
+                ctx.response.status = Status.InternalServerError;
+                break;
+        }
+        ctx.response.body = getJsonResponse(false, {}, code);
     }
-});
-
-router.get("/api", (ctx) => {
-    ctx.response.headers.set("Content-Type", "application/json");
-    ctx.response.body = "Received a HTTP GET request";
-});
-
-router.post("/api", (ctx) => {
-    ctx.response.headers.set("Content-Type", "application/json");
-    ctx.response.body = "Received a HTTP POST request";
-});
-
-router.put("/api/:id", (ctx) => {
-    ctx.response.headers.set("Content-Type", "application/json");
-    ctx.response.body = "Received a HTTP PUT request";
-});
-
-router.delete("/api/:id", (ctx) => {
-    ctx.response.headers.set("Content-Type", "application/json");
-    ctx.response.body = "Received a HTTP DELETE request";
 });
 
 const app = new Application();
@@ -50,9 +83,20 @@ app.use(router.routes());
 app.use(router.allowedMethods());
 
 app.use(async (ctx, next) => {
-    ctx.response.status = Status.NotFound;
-    await next();
+    try {
+        await send(ctx, ctx.request.url.pathname, {
+            root: `${dirname}/frontend`,
+            index: "index.html",
+        });
+    } catch (e) {
+        console.error(e);
+    } finally {
+        await next();
+    }
 });
+
+const uuid1 = await generateUUIDv5(UUID_NAMESPACE.UUID_NAMESPACE_OID, "test1");
+const uuid2 = await generateUUIDv5(UUID_NAMESPACE.UUID_NAMESPACE_OID, "test2");
 
 app.addEventListener("listen", ({ secure, hostname, port }) => {
     const protocol = secure ? "https" : "http";
@@ -61,12 +105,3 @@ app.addEventListener("listen", ({ secure, hostname, port }) => {
 });
 
 await app.listen({ port });
-
-// ctx?.params?.id
-
-// ctx.response.body = {
-//     status: {
-//         code: 404,
-//         message: "Not Found",
-//     },
-// };

@@ -13,12 +13,23 @@ npm install -g npm # update to latest npm version
 npm install -g typescript # install typescript
 ```
 
+## Developing & Debugging
+
+-   open folder in vs code
+
+```
+code .          # backend
+code frontend   # frontend
+```
+
+-   start developing & debugging
+
 ## Build
 
 -   only transpile frontend TS to JS because backend TS runs directly inside deno
 
 ```
-cd ./frontend/static
+cd frontend
 tsc
 ```
 

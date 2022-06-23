@@ -2,13 +2,20 @@
   "compilerOptions": {
     "target": "ESNext",
     "module": "ESNext",
-    // "lib": ["ESNext", "DOM"],
+    "lib": [
+      "ESNext",
+      "DOM"
+    ],
     "allowJs": false,
     "checkJs": false,
     "sourceMap": true,
     "strict": true,
     "esModuleInterop": true,
     "skipLibCheck": true,
-    "forceConsistentCasingInFileNames": true
+    "forceConsistentCasingInFileNames": true,
+    "outDir": "js",
+    "rootDirs": [
+      "ts"
+    ],
   }
 }

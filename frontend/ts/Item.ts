@@ -1,11 +1,11 @@
-import DataListItem from "./DataListItem.js";
+// import DataListItem from "./DataListItem.js";
 
 export default {
     data() {
         return {};
     },
     components: {
-        DataListItem,
+        // DataListItem,
     },
     template: `
         <div class="d-flex">
