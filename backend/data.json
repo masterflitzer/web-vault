@@ -1,6 +1,5 @@
-[
-  {
-    "id": "aa49dfe9-1377-50bb-ab9c-2dcb47ceefb0",
+{
+  "aa49dfe9-1377-50bb-ab9c-2dcb47ceefb0": {
     "name": "test1",
     "username": "x",
     "password": "SGVsbG8gV29ybGQh",
@@ -8,8 +7,7 @@
       "example.com"
     ]
   },
-  {
-    "id": "67963d37-3608-57d2-956c-93bbe828b334",
+  "67963d37-3608-57d2-956c-93bbe828b334": {
     "name": "test2",
     "username": "here-my-username",
     "password": "here-my-password",
@@ -17,4 +15,4 @@
       "test.example.com"
     ]
   }
-]
+}

@@ -1,11 +1,3 @@
-export type VaultEntry = {
-    id: string | null;
-    name: string | null;
-    username: string | null;
-    password: string | null;
-    uri: string[] | null;
-};
-
 export type VaultEntryData = {
     name: string | null;
     username: string | null;
@@ -13,9 +5,11 @@ export type VaultEntryData = {
     uri: string[] | null;
 };
 
+export type VaultEntries = Record<string, VaultEntryData>;
+
 export type JsonResponse = {
     success: boolean;
-    result: Record<string, unknown>;
+    result: Record<string, VaultEntryData>;
     message: MessageCode | null;
 };
 
