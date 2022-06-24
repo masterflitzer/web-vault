@@ -14,9 +14,9 @@ export enum UUID_NAMESPACE {
     X500 = "6ba7b814-9dad-11d1-80b4-00c04fd430c8",
 }
 
-export const isValid4 = (id: string) => uuid4.validate(id);
+export const validateUUIDv4 = (id: string) => uuid4.validate(id);
 
-export const isValid5 = (id: string) => uuid5.validate(id);
+export const validateUUIDv5 = (id: string) => uuid5.validate(id);
 
 export const generateUUIDv4 = () => crypto.randomUUID();
 

@@ -1,11 +1,13 @@
-export type VaultEntryData = {
+export type Vault = Map<string, VaultEntry>;
+
+export type VaultEntry = {
     name: string | null;
     username: string | null;
     password: string | null;
     uri: string[] | null;
 };
 
-export type VaultEntries = Record<string, VaultEntryData>;
+export type VaultEntries = Record<string, VaultEntry>;
 
 export type MessageCode = {
     code: number;
