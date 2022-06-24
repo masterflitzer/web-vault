@@ -7,13 +7,13 @@ export type VaultEntryData = {
 
 export type VaultEntries = Record<string, VaultEntryData>;
 
-export type JsonResponse = {
-    success: boolean;
-    result: Record<string, VaultEntryData>;
-    message: MessageCode | null;
-};
-
 export type MessageCode = {
     code: number;
     message: string;
+};
+
+export type JsonResponse = {
+    success: boolean;
+    result: VaultEntries | null;
+    message: MessageCode | null;
 };
