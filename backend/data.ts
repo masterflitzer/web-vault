@@ -1,4 +1,4 @@
-import type { VaultEntry, VaultEntryData } from "./types.ts";
+import type { VaultEntryData } from "./types.ts";
 import { serializeCodeObject, onlyDiff } from "./helper.ts";
 import * as uuid from "./uuid.ts";
 
@@ -27,11 +27,11 @@ export async function create(values: VaultEntryData) {
     await writeJson();
 }
 
-export async function read(): Promise<VaultEntry[]> {
+export async function read() {
     await readJson();
-    const result: VaultEntry[] = [];
+    const result: Record<string, VaultEntryData> = {};
     data.forEach((value, key) => {
-        result.push({ id: key, ...value });
+        result[key] = value;
     });
     return result;
 }
@@ -64,14 +64,13 @@ export async function deleteEntry(id: string | null) {
 async function readJson() {
     try {
         const text = await Deno.readTextFile(dataFilePath);
-        const json = JSON.parse(text) as VaultEntry[];
+        const json = JSON.parse(text) as Record<string, VaultEntryData>;
         data.clear();
-        json.forEach((item) => {
-            const { id, ...rest } = item;
-            if (id != null) {
-                data.set(id, rest);
-            }
-        });
+        for (const key in json) {
+            if (!Object.hasOwn(json, key)) continue;
+            const value = json[key];
+            data.set(key, value);
+        }
     } catch (e) {
         console.error(e);
         throw new Error(serializeCodeObject(104));
@@ -80,9 +79,9 @@ async function readJson() {
 
 async function writeJson() {
     try {
-        const json: VaultEntry[] = [];
+        const json: Record<string, VaultEntryData> = {};
         data.forEach((value, key) => {
-            json.push({ id: key, ...value });
+            json[key] = value;
         });
         await Deno.writeTextFile(dataFilePath, JSON.stringify(json, null, 2));
     } catch (e) {

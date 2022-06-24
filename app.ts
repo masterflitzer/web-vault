@@ -6,7 +6,7 @@ import {
 import {
     getDirname,
     getJsonResponse,
-    getVaultEntryFromBody,
+    getVaultEntryDataFromBody,
     getStatusFromCode,
     deserializeCodeObject,
 } from "./backend/helper.ts";
@@ -23,7 +23,7 @@ router.get("/api", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
     try {
         const result = await data.read();
-        ctx.response.body = getJsonResponse(true, { result });
+        ctx.response.body = getJsonResponse(true, result);
         ctx.response.body = JSON.stringify(ctx.response.body, null, 2);
     } catch (e) {
         console.error(e);
@@ -38,7 +38,7 @@ router.post("/api", async (ctx) => {
     const body = ctx.request.body({
         type: "json",
     });
-    const payload = await getVaultEntryFromBody(body);
+    const payload = await getVaultEntryDataFromBody(body);
     try {
         await data.create({
             name: payload.name,
@@ -60,7 +60,7 @@ router.put("/api", async (ctx) => {
     const body = ctx.request.body({
         type: "json",
     });
-    const { id, ...rest } = await getVaultEntryFromBody(body);
+    const { id, ...rest } = await getVaultEntryDataFromBody(body);
     try {
         await data.update(id, rest);
         ctx.response.body = getJsonResponse(true, {});

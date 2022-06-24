@@ -1,7 +1,7 @@
 import { Status } from "https://deno.land/x/oak@v10.4.0/mod.ts";
 import getMessageCode from "./codes.ts";
 import type { BodyJson } from "https://deno.land/x/oak@v10.4.0/mod.ts";
-import type { JsonResponse, VaultEntry, VaultEntryData } from "./types.ts";
+import type { JsonResponse, VaultEntryData, VaultEntries } from "./types.ts";
 
 export const serializeCodeObject = (code: number) => JSON.stringify({ code });
 
@@ -16,7 +16,7 @@ export function getDirname(url: string) {
 
 export function getJsonResponse(
     success: boolean,
-    result: Record<string, unknown>,
+    result: VaultEntries,
     message?: number
 ): JsonResponse {
     return {
@@ -26,10 +26,9 @@ export function getJsonResponse(
     };
 }
 
-export async function getVaultEntryFromBody(body: BodyJson) {
+export async function getVaultEntryDataFromBody(body: BodyJson) {
     const payload = await body.value;
-    const values: VaultEntry = {
-        id: payload.id ?? null,
+    const values: VaultEntryData = {
         name: payload.name ?? null,
         username: payload.username ?? null,
         password: payload.password ?? null,
