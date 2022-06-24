@@ -1,4 +1,4 @@
-import type { MessageCode } from "../types.ts";
+import type { MessageCode } from "./types.ts";
 
 const codes = new Map<number, string>();
 

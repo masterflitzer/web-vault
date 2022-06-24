@@ -1,20 +1,7 @@
-import { v5 as uuid5 } from "https://deno.land/std@0.144.0/uuid/mod.ts";
-import type { JsonResponse } from "../types.ts";
+import { Status } from "https://deno.land/x/oak@v10.4.0/mod.ts";
 import getMessageCode from "./codes.ts";
-
-export enum UUID_NAMESPACE {
-    UUID_NAMESPACE_DNS = "6ba7b810-9dad-11d1-80b4-00c04fd430c8",
-    UUID_NAMESPACE_URL = "6ba7b811-9dad-11d1-80b4-00c04fd430c8",
-    UUID_NAMESPACE_OID = "6ba7b812-9dad-11d1-80b4-00c04fd430c8",
-    UUID_NAMESPACE_X500 = "6ba7b814-9dad-11d1-80b4-00c04fd430c8",
-}
-
-export const generateUUIDv4 = () => crypto.randomUUID();
-
-export const generateUUIDv5 = (namespace: UUID_NAMESPACE, data: string) =>
-    uuid5.generate(namespace, new TextEncoder().encode(data));
-
-export const isValidUUID = (uuid: string) => uuid5.validate(uuid);
+import type { BodyJson } from "https://deno.land/x/oak@v10.4.0/mod.ts";
+import type { JsonResponse, VaultEntry, VaultEntryData } from "./types.ts";
 
 export const serializeCodeObject = (code: number) => JSON.stringify({ code });
 
@@ -37,4 +24,46 @@ export function getJsonResponse(
         result,
         message: message != null ? getMessageCode(message) : null,
     };
+}
+
+export async function getVaultEntryFromBody(body: BodyJson) {
+    const payload = await body.value;
+    const values: VaultEntry = {
+        id: payload.id ?? null,
+        name: payload.name ?? null,
+        username: payload.username ?? null,
+        password: payload.password ?? null,
+        uri: payload.uri ?? null,
+    };
+    return values;
+}
+
+export function getStatusFromCode(code: number) {
+    let status: Status;
+    switch (code) {
+        case 101:
+            status = Status.BadRequest;
+            break;
+        case 102:
+            status = Status.NotFound;
+            break;
+        case 103:
+            status = Status.Conflict;
+            break;
+        default:
+            status = Status.InternalServerError;
+            break;
+    }
+    return status;
+}
+
+export function onlyDiff(
+    oldData: VaultEntryData,
+    newData: VaultEntryData
+): VaultEntryData {
+    if (newData.name == null) newData.name = oldData.name;
+    if (newData.username == null) newData.username = oldData.username;
+    if (newData.password == null) newData.password = oldData.password;
+    if (newData.uri == null) newData.uri = oldData.uri;
+    return newData;
 }
