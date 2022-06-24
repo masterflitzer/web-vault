@@ -1,7 +1,7 @@
 import { Status } from "https://deno.land/x/oak@v10.4.0/mod.ts";
 import getMessageCode from "./codes.ts";
 import type { BodyJson } from "https://deno.land/x/oak@v10.4.0/mod.ts";
-import type { JsonResponse, VaultEntryData, VaultEntries } from "./types.ts";
+import type { JsonResponse, VaultEntry, VaultEntries } from "./types.ts";
 
 export const serializeCodeObject = (code: number) => JSON.stringify({ code });
 
@@ -26,9 +26,9 @@ export function getJsonResponse(
     };
 }
 
-export async function getVaultEntryDataFromBody(body: BodyJson) {
+export async function getVaultEntryFromBody(body: BodyJson) {
     const payload = await body.value;
-    const values: VaultEntryData = {
+    const values: VaultEntry = {
         name: payload.name ?? null,
         username: payload.username ?? null,
         password: payload.password ?? null,
@@ -56,10 +56,7 @@ export function getStatusFromCode(code: number) {
     return status;
 }
 
-export function onlyDiff(
-    oldData: VaultEntryData,
-    newData: VaultEntryData
-): VaultEntryData {
+export function onlyDiff(oldData: VaultEntry, newData: VaultEntry): VaultEntry {
     if (newData.name == null) newData.name = oldData.name;
     if (newData.username == null) newData.username = oldData.username;
     if (newData.password == null) newData.password = oldData.password;

@@ -6,11 +6,12 @@ import {
 import {
     getDirname,
     getJsonResponse,
-    getVaultEntryDataFromBody,
+    getVaultEntryFromBody,
     getStatusFromCode,
     deserializeCodeObject,
 } from "./backend/helper.ts";
 import * as data from "./backend/data.ts";
+import type { VaultEntry } from "./backend/types.ts";
 
 const port = 8080;
 data.setDataFilePath("./backend/data.json");
@@ -38,14 +39,9 @@ router.post("/api", async (ctx) => {
     const body = ctx.request.body({
         type: "json",
     });
-    const payload = await getVaultEntryDataFromBody(body);
+    const payload: VaultEntry = await getVaultEntryFromBody(body);
     try {
-        await data.create({
-            name: payload.name,
-            username: payload.username,
-            password: payload.password,
-            uri: payload.uri,
-        });
+        await data.create(payload);
         ctx.response.body = getJsonResponse(true, {});
     } catch (e) {
         console.error(e);
@@ -55,14 +51,15 @@ router.post("/api", async (ctx) => {
     }
 });
 
-router.put("/api", async (ctx) => {
+router.put("/api/:id", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
+    const id = ctx.params.id;
     const body = ctx.request.body({
         type: "json",
     });
-    const { id, ...rest } = await getVaultEntryDataFromBody(body);
+    const payload: VaultEntry = await getVaultEntryFromBody(body);
     try {
-        await data.update(id, rest);
+        await data.update(id, payload);
         ctx.response.body = getJsonResponse(true, {});
     } catch (e) {
         console.error(e);
@@ -72,14 +69,11 @@ router.put("/api", async (ctx) => {
     }
 });
 
-router.delete("/api", async (ctx) => {
+router.delete("/api/:id", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
-    const body = ctx.request.body({
-        type: "json",
-    });
-    const payload = await body.value;
+    const id = ctx.params.id;
     try {
-        await data.deleteEntry(payload.id);
+        await data.deleteEntry(id);
         ctx.response.body = getJsonResponse(true, {});
     } catch (e) {
         console.error(e);
