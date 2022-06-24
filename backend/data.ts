@@ -1,51 +1,63 @@
-import type { VaultEntry, VaultEntryRest } from "../types.ts";
-import { isValidUUID, serializeCodeObject } from "./helper.ts";
+import type { VaultEntry, VaultEntryData } from "./types.ts";
+import { serializeCodeObject, onlyDiff } from "./helper.ts";
+import * as uuid from "./uuid.ts";
 
 let dataFilePath: string;
 export const setDataFilePath = (s: string) => (dataFilePath = s);
 export const getDataFilePath = () => dataFilePath;
 
-const data = new Map<string, VaultEntryRest>();
+const data = new Map<string, VaultEntryData>();
 
-export async function readItems(): Promise<VaultEntry[]> {
+export async function create(values: VaultEntryData) {
+    let id = await uuid.generateUUIDv5(uuid.UUID_NAMESPACE.OID, values.name);
+    let counter = 0;
+    while (
+        counter < 10 &&
+        !uuid.isNil(id) &&
+        !uuid.isValid5(id) &&
+        data.has(id)
+    ) {
+        id = await uuid.generateUUIDv5(uuid.UUID_NAMESPACE.OID, null);
+        counter++;
+    }
+    if (!uuid.isValid5(id)) throw new Error(serializeCodeObject(101));
+    if (data.has(id)) throw new Error(serializeCodeObject(103));
+    await readJson();
+    data.set(id, values);
+    await writeJson();
+}
+
+export async function read(): Promise<VaultEntry[]> {
     await readJson();
     const result: VaultEntry[] = [];
     data.forEach((value, key) => {
-        result.push({ uuid: key, ...value });
+        result.push({ id: key, ...value });
     });
     return result;
 }
 
-export async function readItem(uuid: string): Promise<VaultEntry> {
-    if (!isValidUUID(uuid)) throw new Error(serializeCodeObject(101));
-    if (!data.has(uuid)) throw new Error(serializeCodeObject(102));
+export async function update(id: string | null, values: VaultEntryData) {
+    if (id == null || !uuid.isValid5(id))
+        throw new Error(serializeCodeObject(101));
+    if (!data.has(id)) throw new Error(serializeCodeObject(102));
     await readJson();
-    const rest = data.get(uuid) as VaultEntryRest;
-    return { uuid, ...rest };
-}
-
-export async function createItem(item: VaultEntry) {
-    const { uuid, ...rest } = item;
-    if (!isValidUUID(uuid)) throw new Error(serializeCodeObject(101));
-    if (data.has(uuid)) throw new Error(serializeCodeObject(103));
-    await readJson();
-    data.set(uuid, rest);
+    const old = data.get(id) ?? {
+        name: null,
+        username: null,
+        password: null,
+        uri: null,
+    };
+    values = onlyDiff(old, values);
+    data.set(id, values);
     await writeJson();
 }
 
-export async function updateItem(item: VaultEntry) {
-    const { uuid, ...rest } = item;
-    if (!isValidUUID(uuid)) throw new Error(serializeCodeObject(101));
-    if (!data.has(uuid)) throw new Error(serializeCodeObject(102));
+export async function deleteEntry(id: string | null) {
+    if (id == null || !uuid.isValid5(id))
+        throw new Error(serializeCodeObject(101));
+    if (!data.has(id)) throw new Error(serializeCodeObject(102));
     await readJson();
-    data.set(uuid, rest);
-    await writeJson();
-}
-
-export async function deleteItem(uuid: string) {
-    if (!isValidUUID(uuid)) throw new Error(serializeCodeObject(101));
-    await readJson();
-    data.delete(uuid);
+    data.delete(id);
     await writeJson();
 }
 
@@ -55,8 +67,10 @@ async function readJson() {
         const json = JSON.parse(text) as VaultEntry[];
         data.clear();
         json.forEach((item) => {
-            const { uuid, ...rest } = item;
-            data.set(uuid, rest);
+            const { id, ...rest } = item;
+            if (id != null) {
+                data.set(id, rest);
+            }
         });
     } catch (e) {
         console.error(e);
@@ -68,7 +82,7 @@ async function writeJson() {
     try {
         const json: VaultEntry[] = [];
         data.forEach((value, key) => {
-            json.push({ uuid: key, ...value });
+            json.push({ id: key, ...value });
         });
         await Deno.writeTextFile(dataFilePath, JSON.stringify(json, null, 2));
     } catch (e) {

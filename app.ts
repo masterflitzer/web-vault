@@ -1,15 +1,14 @@
 import {
     Application,
     Router,
-    Status,
     send,
 } from "https://deno.land/x/oak@v10.4.0/mod.ts";
 import {
     getDirname,
     getJsonResponse,
+    getVaultEntryFromBody,
+    getStatusFromCode,
     deserializeCodeObject,
-    generateUUIDv5,
-    UUID_NAMESPACE,
 } from "./backend/helper.ts";
 import * as data from "./backend/data.ts";
 
@@ -20,69 +19,72 @@ const dirname = getDirname(import.meta.url);
 
 const router = new Router();
 
-// deno-lint-ignore require-await
 router.get("/api", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
-    const msg = "Received a HTTP GET request";
-    ctx.response.body = {};
-    ctx.response.body = JSON.stringify(
-        {
-            status: {
-                code: ctx.response.status,
-                message: msg,
-            },
-        },
-        null,
-        2
-    );
+    try {
+        const result = await data.read();
+        ctx.response.body = getJsonResponse(true, { result });
+        ctx.response.body = JSON.stringify(ctx.response.body, null, 2);
+    } catch (e) {
+        console.error(e);
+        const code = deserializeCodeObject(e.message);
+        ctx.response.status = getStatusFromCode(code);
+        ctx.response.body = getJsonResponse(false, {}, code);
+    }
 });
 
-// deno-lint-ignore require-await
 router.post("/api", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
-    const msg = "Received a HTTP POST request";
-    ctx.response.body = {};
-    ctx.response.body = {
-        status: {
-            code: ctx.response.status,
-            message: msg,
-        },
-    };
-});
-
-// deno-lint-ignore require-await
-router.put("/api/:id", async (ctx) => {
-    ctx.response.headers.set("Content-Type", "application/json");
-    const msg = "Received a HTTP PUT request";
-    ctx.response.body = {};
-    ctx.response.body = {
-        status: {
-            code: ctx.response.status,
-            message: msg,
-        },
-    };
-});
-
-router.delete("/api/:id", async (ctx) => {
-    ctx.response.headers.set("Content-Type", "application/json");
-    const id = ctx.params.id;
+    const body = ctx.request.body({
+        type: "json",
+    });
+    const payload = await getVaultEntryFromBody(body);
     try {
-        await data.deleteItem(id);
+        await data.create({
+            name: payload.name,
+            username: payload.username,
+            password: payload.password,
+            uri: payload.uri,
+        });
         ctx.response.body = getJsonResponse(true, {});
     } catch (e) {
         console.error(e);
         const code = deserializeCodeObject(e.message);
-        switch (code) {
-            case 101:
-                ctx.response.status = Status.BadRequest;
-                break;
-            case 102:
-                ctx.response.status = Status.NotFound;
-                break;
-            default:
-                ctx.response.status = Status.InternalServerError;
-                break;
-        }
+        ctx.response.status = getStatusFromCode(code);
+        ctx.response.body = getJsonResponse(false, {}, code);
+    }
+});
+
+router.put("/api", async (ctx) => {
+    ctx.response.headers.set("Content-Type", "application/json");
+    const body = ctx.request.body({
+        type: "json",
+    });
+    const { id, ...rest } = await getVaultEntryFromBody(body);
+    try {
+        await data.update(id, rest);
+        ctx.response.body = getJsonResponse(true, {});
+    } catch (e) {
+        console.error(e);
+        const code = deserializeCodeObject(e.message);
+        ctx.response.status = getStatusFromCode(code);
+        ctx.response.body = getJsonResponse(false, {}, code);
+    }
+});
+
+router.delete("/api", async (ctx) => {
+    ctx.response.headers.set("Content-Type", "application/json");
+    const body = ctx.request.body({
+        type: "json",
+    });
+    const payload = await body.value;
+    try {
+        await data.deleteEntry(payload.id);
+        ctx.response.body = getJsonResponse(true, {});
+    } catch (e) {
+        console.error(e);
+        const code = deserializeCodeObject(e.message);
+        ctx.response.status = getStatusFromCode(code);
         ctx.response.body = getJsonResponse(false, {}, code);
     }
 });
@@ -104,9 +106,6 @@ app.use(async (ctx, next) => {
         await next();
     }
 });
-
-const uuid1 = await generateUUIDv5(UUID_NAMESPACE.UUID_NAMESPACE_OID, "test1");
-const uuid2 = await generateUUIDv5(UUID_NAMESPACE.UUID_NAMESPACE_OID, "test2");
 
 app.addEventListener("listen", ({ secure, hostname, port }) => {
     const protocol = secure ? "https" : "http";
