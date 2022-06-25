@@ -20,7 +20,22 @@ const dirname = getDirname(import.meta.url);
 
 const router = new Router();
 
-router.get("/api", async (ctx) => {
+router.get("/api/reload", async (ctx) => {
+    try {
+        await data.reloadData();
+    } catch (e) {
+        console.error(e);
+        const code = deserializeCodeObject(e.message);
+        ctx.response.status = getStatusFromCode(code);
+        ctx.response.body = getJsonResponse(false, {}, code);
+    }
+});
+
+router.get("/api/openapi", async (ctx) => {
+    await send(ctx, "./backend/openapi.json");
+});
+
+router.get("/api/passwords", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
     try {
         const result = await data.read();
@@ -34,15 +49,15 @@ router.get("/api", async (ctx) => {
     }
 });
 
-router.post("/api", async (ctx) => {
+router.post("/api/passwords", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
     const body = ctx.request.body({
         type: "json",
     });
     const payload: VaultEntry = await getVaultEntryFromBody(body);
     try {
-        await data.create(payload);
-        ctx.response.body = getJsonResponse(true, {});
+        const id = await data.create(payload);
+        ctx.response.body = getJsonResponse(true, { id });
     } catch (e) {
         console.error(e);
         const code = deserializeCodeObject(e.message);
@@ -51,7 +66,7 @@ router.post("/api", async (ctx) => {
     }
 });
 
-router.put("/api/:id", async (ctx) => {
+router.put("/api/passwords/:id", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
     const id = ctx.params.id;
     const body = ctx.request.body({
@@ -69,7 +84,7 @@ router.put("/api/:id", async (ctx) => {
     }
 });
 
-router.delete("/api/:id", async (ctx) => {
+router.delete("/api/passwords/:id", async (ctx) => {
     ctx.response.headers.set("Content-Type", "application/json");
     const id = ctx.params.id;
     try {
@@ -81,6 +96,11 @@ router.delete("/api/:id", async (ctx) => {
         ctx.response.status = getStatusFromCode(code);
         ctx.response.body = getJsonResponse(false, {}, code);
     }
+});
+
+// deno-lint-ignore require-await
+router.patch("/api/passwords/:id", async (ctx) => {
+    ctx.response.body = getJsonResponse(false, {});
 });
 
 const app = new Application();

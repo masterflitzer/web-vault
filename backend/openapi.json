@@ -1,0 +1,22 @@
+{
+  "openapi": "3.0.3",
+  "info": {
+    "version": "1.0.0",
+    "title": "Web Vault API",
+    "contact": {
+      "name": "Masterflitzer",
+      "url": "https://github.com/masterflitzer/web-vault"
+    },
+    "license": {
+      "name": "MIT License"
+    }
+  },
+  "servers": [
+    {
+      "url": "/api"
+    }
+  ],
+  "paths": {
+    "/password": {}
+  }
+}
