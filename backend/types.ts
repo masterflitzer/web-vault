@@ -16,6 +16,6 @@ export type MessageCode = {
 
 export type JsonResponse = {
     success: boolean;
-    result: VaultEntries | null;
+    result: VaultEntries | Record<string, string> | null;
     message: MessageCode | null;
 };
